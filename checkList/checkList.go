@@ -3,6 +3,7 @@ package checkList
 import (
 	"log"
 	"os/exec"
+	"regexp"
 	"sync"
 
 	"github.com/karolgorecki/goprove/util"
@@ -46,6 +47,10 @@ func get() (checkList map[string]checkItem) {
 		"hasContribution": {
 			name:     "Contribution Process: Does the project document a contribution process?",
 			function: hasContribution,
+		},
+		"testPassing": {
+			name:     "Are the tests passing?",
+			function: testPassing,
 		},
 	}
 
@@ -99,6 +104,16 @@ func isFormatted(taskName string) (message string, success bool) {
 	output, _ := exec.Command("gofmt", "-l", ".").Output()
 
 	if len(output) > 0 {
+		return util.GetFailMessage(taskName), false
+	}
+
+	return util.GetSuccessMessage(taskName), true
+}
+
+func testPassing(taskName string) (message string, success bool) {
+	output, _ := exec.Command("go", "test", "./...").Output()
+
+	if testFails, _ := regexp.Match(`--- FAIL`, output); testFails {
 		return util.GetFailMessage(taskName), false
 	}
 
