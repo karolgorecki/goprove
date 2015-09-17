@@ -1,7 +1,7 @@
 package checkList
 
 import (
-	"errors"
+	"log"
 	"os/exec"
 	"sync"
 
@@ -109,7 +109,7 @@ func hasLicense(taskName string) (message string, success bool) {
 	hasLicense, err := util.FileExists("license", "licensing")
 
 	if err != nil {
-		errors.New("There was a problem with finding the file")
+		log.Fatal(err)
 	}
 
 	if hasLicense {
@@ -122,7 +122,7 @@ func hasLicense(taskName string) (message string, success bool) {
 func hasReadme(taskName string) (message string, success bool) {
 	hasReadme, err := util.FileExists("readme")
 	if err != nil {
-		errors.New("There was a problem with finding the file")
+		log.Fatal(err)
 	}
 
 	if hasReadme {
@@ -135,7 +135,7 @@ func hasReadme(taskName string) (message string, success bool) {
 func hasContribution(taskName string) (message string, success bool) {
 	hasContribution, err := util.FileExists("contribution", "contribute", "contributing")
 	if err != nil {
-		errors.New("There was a problem with finding the file")
+		log.Fatal(err)
 	}
 
 	if hasContribution {
