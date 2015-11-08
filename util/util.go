@@ -9,6 +9,14 @@ import (
 	"fmt"
 )
 
+const (
+	nokColor     = "\x1b[1;31m[✗]" + defaultColor + " %s"
+	okColor      = "\x1b[1;32m[✔]" + defaultColor + " %s"
+	bannerColor  = "\x1b[0;32m"
+	defaultColor = "\x1b[0m"
+	fadedColor   = "\x1b[1;30m"
+)
+
 var executionTime time.Time
 
 // BenchmarkStart is a function for starting time counter
@@ -18,31 +26,28 @@ func BenchmarkStart() {
 
 // ExecutionTime prints the time since the BenchmarkStart
 func ExecutionTime() {
-	fmt.Printf("\n\x1b[1;30mExecution time %s\x1b[0m\n", time.Since(executionTime))
+	fmt.Printf("\n"+fadedColor+"Execution time %s"+defaultColor+"\n", time.Since(executionTime))
 }
 
 // GetSuccessMessage is a function that returns formatted success message
 func GetSuccessMessage(msg string) (successMessage string) {
-	return fmt.Sprintf("\x1b[1;32m[✔]\x1b[0m %s", msg)
+	return fmt.Sprintf(okColor, msg)
 }
 
 // GetFailMessage is a function that returns formatted fail message
 func GetFailMessage(msg string) (failMessage string) {
-	return fmt.Sprintf("\x1b[1;31m[✗]\x1b[0m %s", msg)
+	return fmt.Sprintf(nokColor, msg)
 }
 
 // PrintBanner prints the big Goprove
 func PrintBanner() {
-	fmt.Println("\x1b[0;32m", `
+	fmt.Println(bannerColor, `
 
-   ██████╗  ██████╗ ██████╗ ██████╗  ██████╗ ██╗   ██╗███████╗
-  ██╔════╝ ██╔═══██╗██╔══██╗██╔══██╗██╔═══██╗██║   ██║██╔════╝
-  ██║  ███╗██║   ██║██████╔╝██████╔╝██║   ██║██║   ██║█████╗  
-  ██║   ██║██║   ██║██╔═══╝ ██╔══██╗██║   ██║╚██╗ ██╔╝██╔══╝  
-  ╚██████╔╝╚██████╔╝██║     ██║  ██║╚██████╔╝ ╚████╔╝ ███████╗
-   ╚═════╝  ╚═════╝ ╚═╝     ╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚══════╝ 
+=================================
+	G O P R O ✔ E
+=================================
 
-`, "\x1b[0m")
+`, defaultColor)
 }
 
 // FileExists check if the given file(s) exists. Returns true if file exists.

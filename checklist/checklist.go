@@ -1,4 +1,4 @@
-package checkList
+package checklist
 
 import (
 	"log"
