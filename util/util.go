@@ -3,12 +3,12 @@ package util
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/go-xweb/log"
+	"time"
 
 	"fmt"
 )
@@ -18,6 +18,18 @@ const (
 	okColor      = "\x1b[1;32m[✔]" + defaultColor + " %s"
 	defaultColor = "\x1b[0m"
 )
+
+var executionTime time.Time
+
+// BenchmarkStart is a function for starting time counter
+func BenchmarkStart() {
+	executionTime = time.Now()
+}
+
+// ExecutionTime prints the time since the BenchmarkStart
+func ExecutionTime() {
+	fmt.Printf("\n"+okColor+"Execution time %s"+okColor+"\n", time.Since(executionTime))
+}
 
 // FormatSuccess decorates a string for the text output.
 func FormatSuccess(msg string) (successMessage string) {
@@ -33,7 +45,7 @@ func FormatFail(msg string) (failMessage string) {
 func FilesExistAny(path string, files ...string) bool {
 	dirFiles, err := ioutil.ReadDir(path)
 	if err != nil {
-		log.Error(err)
+		log.Print(err)
 		return false
 	}
 
