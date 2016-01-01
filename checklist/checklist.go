@@ -1,180 +1,128 @@
 package checklist
 
 import (
-	"log"
-	"os/exec"
-	"regexp"
+	"encoding/json"
 	"sync"
 
-	"github.com/karolgorecki/goprove/util"
+	"github.com/fatih/structs"
 )
 
-var wg sync.WaitGroup
+const (
+	minimumCriteria itemCategory = iota
+	goodCitizen
+	extraCredit
+)
 
-// checkItem is the basic sturct for the test cases
-type checkItem struct {
-	name     string
-	function func(string) (message string, success bool)
+var (
+	sourcePath string
+	checkList  []checkItem
+)
+
+//go:generate enumer -type=itemCategory
+type itemCategory byte
+
+func (i itemCategory) MarshalJSON() ([]byte, error) {
+	return json.Marshal(i.String())
 }
 
-func get() (checkList map[string]checkItem) {
+type checkItem struct {
+	Name, Desc string
+	Category   itemCategory
+	fn         func() bool
+}
 
-	checkList = map[string]checkItem{
-		"builds": {
-			name:     "Compiles: Does the project build?",
-			function: builds,
+func (ci checkItem) run() (success bool) {
+	return ci.fn()
+}
+
+func init() {
+	checkList = []checkItem{
+		{
+			Name:     "projectBuilds",
+			Category: minimumCriteria,
+			Desc:     "Compiles: Does the project build?",
+			fn:       projectBuilds,
 		},
-		"isFormated": {
-			name:     "gofmt Correctness: Is the code formatted correctly?",
-			function: isFormatted,
+		{
+			Name:     "isFormatted",
+			Category: minimumCriteria,
+			Desc:     "gofmt Correctness: Is the code formatted correctly?",
+			fn:       isFormatted,
 		},
-		"hasLicense": {
-			name:     "Licensed: Does the project have a license?",
-			function: hasLicense,
+		{
+			Name:     "hasLicense",
+			Category: minimumCriteria,
+			Desc:     "Licensed: Does the project have a license?",
+			fn:       hasLicense,
 		},
-		"isLinted": {
-			name:     "golint Correctness: Is the linter satisfied?",
-			function: isLinted,
+		{
+			Name:     "isLinted",
+			Category: minimumCriteria,
+			Desc:     "golint Correctness: Is the linter satisfied?",
+			fn:       isLinted,
 		},
-		"isVet": {
-			name:     "go tool vet Correctness: Is the Go vet satisfied?",
-			function: isVet,
+		{
+			Name:     "isVetted",
+			Category: minimumCriteria,
+			Desc:     "go tool vet Correctness: Is the Go vet satisfied?",
+			fn:       isVetted,
 		},
-		"hasReadme": {
-			name:     "README Presence: Does the project's include a documentation entrypoint?",
-			function: hasReadme,
+		{
+			Name:     "hasReadme",
+			Category: minimumCriteria,
+			Desc:     "README Presence: Does the project's include a documentation entrypoint?",
+			fn:       hasReadme,
 		},
-		"hasContribution": {
-			name:     "Contribution Process: Does the project document a contribution process?",
-			function: hasContribution,
+		{
+			Name:     "testPassing",
+			Category: minimumCriteria,
+			Desc:     "Are the tests passing?",
+			fn:       testPassing,
 		},
-		"testPassing": {
-			name:     "Are the tests passing?",
-			function: testPassing,
+		{
+			Name:     "isDirMatch",
+			Category: minimumCriteria,
+			Desc:     "Directory Names and Packages Match: Does each package <pkg> statement's package name match the containing directory name?",
+			fn:       isDirMatch,
+		},
+		{
+			Name:     "hasContributing",
+			Category: goodCitizen,
+			Desc:     "Contribution Process: Does the project document a contribution process?",
+			fn:       hasContributing,
+		},
+		{
+			Name:     "hasBenches",
+			Category: extraCredit,
+			Desc:     "Benchmarks: In addition to tests, does the project have benchmarks?",
+			fn:       hasBenches,
+		},
+		{
+			Name:     "hasBlackboxTests",
+			Category: extraCredit,
+			Desc:     "Blackbox Tests: In addition to standard tests, does the project have blackbox tests?",
+			fn:       hasBlackboxTests,
 		},
 	}
-
-	return checkList
-}
-
-func (checkItem checkItem) Run() (message string, success bool) {
-	return checkItem.function(checkItem.name)
 }
 
 // RunTasks is a wrapper for running all tasks from the list
-func RunTasks() (successTasks []string, failedTasks []string) {
-	tasks := get()
+func RunTasks(path string) (successTasks []map[string]interface{}, failedTasks []map[string]interface{}) {
+	var wg sync.WaitGroup
+	sourcePath = path
 
-	wg.Add(len(tasks))
-	for _, task := range tasks {
-
+	wg.Add(len(checkList))
+	for _, task := range checkList {
 		go func(task checkItem) {
-			desc, isSuccess := task.Run()
-
-			if isSuccess {
-				successTasks = append(successTasks, desc)
-
+			if ok := task.run(); ok {
+				successTasks = append(successTasks, structs.Map(task))
 			} else {
-				failedTasks = append(failedTasks, desc)
+				failedTasks = append(failedTasks, structs.Map(task))
 			}
-
 			wg.Done()
-
 		}(task)
 	}
 
 	wg.Wait()
-
 	return successTasks, failedTasks
-}
-
-// -----------------------------------------------------------------------------
-// CHECKLIST FUNCTIONS
-// -----------------------------------------------------------------------------
-func builds(taskName string) (message string, success bool) {
-	_, err := exec.Command("go", "build").Output()
-
-	if err != nil {
-		return util.GetFailMessage(taskName), false
-	}
-	return util.GetSuccessMessage(taskName), true
-}
-
-func isFormatted(taskName string) (message string, success bool) {
-	output, _ := exec.Command("gofmt", "-l", ".").Output()
-
-	if len(output) > 0 {
-		return util.GetFailMessage(taskName), false
-	}
-
-	return util.GetSuccessMessage(taskName), true
-}
-
-func testPassing(taskName string) (message string, success bool) {
-	output, _ := exec.Command("go", "test", "./...").Output()
-
-	if testFails, _ := regexp.Match(`--- FAIL`, output); testFails {
-		return util.GetFailMessage(taskName), false
-	}
-
-	return util.GetSuccessMessage(taskName), true
-}
-
-func hasLicense(taskName string) (message string, success bool) {
-	hasLicense, err := util.FileExists("license", "licensing")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if hasLicense {
-		return util.GetSuccessMessage(taskName), true
-	}
-
-	return util.GetFailMessage(taskName), false
-}
-
-func hasReadme(taskName string) (message string, success bool) {
-	hasReadme, err := util.FileExists("readme")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if hasReadme {
-		return util.GetSuccessMessage(taskName), true
-	}
-
-	return util.GetFailMessage(taskName), false
-}
-
-func hasContribution(taskName string) (message string, success bool) {
-	hasContribution, err := util.FileExists("contribution", "contribute", "contributing")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if hasContribution {
-		return util.GetSuccessMessage(taskName), true
-	}
-
-	return util.GetFailMessage(taskName), false
-}
-
-func isLinted(taskName string) (string, bool) {
-
-	output, _ := exec.Command("golint").Output()
-
-	if len(output) > 0 {
-		return util.GetFailMessage(taskName), false
-	}
-	return util.GetSuccessMessage(taskName), true
-}
-
-func isVet(taskName string) (message string, success bool) {
-	_, err := exec.Command("go", "vet").Output()
-
-	if err != nil {
-		return util.GetFailMessage(taskName), false
-	}
-	return util.GetSuccessMessage(taskName), true
 }
