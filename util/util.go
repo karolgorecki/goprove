@@ -1,10 +1,14 @@
+// Package util provides some helper methods.
 package util
 
 import (
-	"errors"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
-	"time"
+
+	"github.com/go-xweb/log"
 
 	"fmt"
 )
@@ -12,69 +16,70 @@ import (
 const (
 	nokColor     = "\x1b[1;31m[✗]" + defaultColor + " %s"
 	okColor      = "\x1b[1;32m[✔]" + defaultColor + " %s"
-	bannerColor  = "\x1b[0;32m"
 	defaultColor = "\x1b[0m"
-	fadedColor   = "\x1b[1;30m"
 )
 
-var executionTime time.Time
-
-// BenchmarkStart is a function for starting time counter
-func BenchmarkStart() {
-	executionTime = time.Now()
-}
-
-// ExecutionTime prints the time since the BenchmarkStart
-func ExecutionTime() {
-	fmt.Printf("\n"+fadedColor+"Execution time %s"+defaultColor+"\n", time.Since(executionTime))
-}
-
-// GetSuccessMessage is a function that returns formatted success message
-func GetSuccessMessage(msg string) (successMessage string) {
+// FormatSuccess decorates a string for the text output.
+func FormatSuccess(msg string) (successMessage string) {
 	return fmt.Sprintf(okColor, msg)
 }
 
-// GetFailMessage is a function that returns formatted fail message
-func GetFailMessage(msg string) (failMessage string) {
+// FormatFail decorates a string for the text output.
+func FormatFail(msg string) (failMessage string) {
 	return fmt.Sprintf(nokColor, msg)
 }
 
-// PrintBanner prints the big Goprove
-func PrintBanner() {
-	fmt.Println(bannerColor, `
-
-=================================
-	G O P R O ✔ E
-=================================
-
-`, defaultColor)
-}
-
-// FileExists check if the given file(s) exists. Returns true if file exists.
-func FileExists(files ...string) (fileExists bool, err error) {
-
-	fs, err := os.Open(".")
+// FilesExistAny checks if the given file(s) exists in the root folder.
+func FilesExistAny(path string, files ...string) bool {
+	dirFiles, err := ioutil.ReadDir(path)
 	if err != nil {
-		return false, errors.New("There was a problem with opening the directory")
-	}
-	defer fs.Close()
-
-	dir, err := fs.Readdir(-1)
-	if err != nil {
-		return false, errors.New("There was a problem with reading the directory")
+		log.Error(err)
+		return false
 	}
 
-FILE_SEARCH:
-	for _, file := range dir {
-		fileName := strings.ToLower(file.Name())
+	for _, f := range dirFiles {
+		if f.IsDir() {
+			continue
+		}
 
 		for _, file := range files {
-			if strings.HasPrefix(fileName, file) {
-				fileExists = true
-				break FILE_SEARCH
+			if strings.Index(strings.ToLower(f.Name()), file) != -1 {
+				return true
 			}
 		}
 	}
 
-	return fileExists, nil
+	return false
+}
+
+// FindPatternInTree tries to match the regular expression in files matching the file pattern.
+func FindPatternInTree(path, regex, filePattern string) bool {
+	ok := false
+
+	err := filepath.Walk(path, func(p string, f os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// Only interested in files
+		if f.IsDir() {
+			return nil
+		}
+
+		if match, err := filepath.Match(filePattern, f.Name()); !match || err != nil {
+			return nil
+		}
+
+		file, err := ioutil.ReadFile(p)
+		if err != nil {
+			return err
+		}
+
+		r, _ := regexp.Compile(regex)
+		match := r.FindStringSubmatch(string(file))
+		ok = len(match) > 0
+		return nil
+	})
+
+	return ok && err == nil
 }
