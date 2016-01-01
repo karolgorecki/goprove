@@ -13,6 +13,9 @@ Inspect your project for the best practices listed in the [Go CheckList](https:/
 Usage:
 
   goprove <directory>
+
+  # output as json
+  goprove -output=json <directory>
 ```
 
 ### License
