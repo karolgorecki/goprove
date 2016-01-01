@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/jgautheron/goprove/checklist"
-	"github.com/jgautheron/goprove/util"
+	"github.com/karolgorecki/goprove/checklist"
+	"github.com/karolgorecki/goprove/util"
 )
 
 var (

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jgautheron/goprove/util"
+	"github.com/karolgorecki/goprove/util"
 )
 
 func projectBuilds() bool {
