@@ -22,7 +22,7 @@ var (
 type itemCategory byte
 
 func (i itemCategory) MarshalJSON() ([]byte, error) {
-	return json.Marshal(i.String())
+	return json.Marshal(string(i))
 }
 
 type checkItem struct {
