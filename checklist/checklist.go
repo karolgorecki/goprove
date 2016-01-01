@@ -1,7 +1,6 @@
 package checklist
 
 import (
-	"encoding/json"
 	"sync"
 
 	"github.com/fatih/structs"
@@ -18,12 +17,8 @@ var (
 	checkList  []checkItem
 )
 
-//go:generate enumer -type=itemCategory
+//go:generate jsonenums -type=itemCategory
 type itemCategory byte
-
-func (i itemCategory) MarshalJSON() ([]byte, error) {
-	return json.Marshal(i.String())
-}
 
 type checkItem struct {
 	Name, Desc string
