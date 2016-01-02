@@ -37,14 +37,9 @@ func main() {
 	}
 	sourcePath := args[0]
 
-	// Start the benchmark
-	util.BenchmarkStart()
-
-	// Create 2 arrays with passed/failed checklist items
+	// Create 2 slices with passed/failed checklist items
 	okTasks, nokTasks := checklist.RunTasks(sourcePath)
 
-	// Write the execution time
-	util.ExecutionTime()
 	printOutput(okTasks, nokTasks)
 }
 

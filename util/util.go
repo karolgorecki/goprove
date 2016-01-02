@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"fmt"
 )
@@ -18,18 +17,6 @@ const (
 	okColor      = "\x1b[1;32m[✔]" + defaultColor + " %s"
 	defaultColor = "\x1b[0m"
 )
-
-var executionTime time.Time
-
-// BenchmarkStart is a function for starting time counter
-func BenchmarkStart() {
-	executionTime = time.Now()
-}
-
-// ExecutionTime prints the time since the BenchmarkStart
-func ExecutionTime() {
-	fmt.Printf("\n"+okColor+"Execution time %s"+okColor+"\n", time.Since(executionTime))
-}
 
 // FormatSuccess decorates a string for the text output.
 func FormatSuccess(msg string) (successMessage string) {
