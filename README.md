@@ -1,8 +1,9 @@
-[![Stories in Ready](https://badge.waffle.io/karolgorecki/goprove.png?label=ready&title=Ready)](https://waffle.io/karolgorecki/goprove)
-# goprove
+# 📃 goprove
 
 Inspect your project for the best practices listed in the [Go CheckList](https://github.com/matttproud/gochecklist).
-
+  
+  
+[![Stories in Ready](https://badge.waffle.io/karolgorecki/goprove.png?label=ready&title=Ready)](https://waffle.io/karolgorecki/goprove)
 ### Get Started
 
     $ go get github.com/karolgorecki/goprove
