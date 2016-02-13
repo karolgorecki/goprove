@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/ryanuber/go-license"
+
 	"github.com/karolgorecki/goprove/util"
 )
 
@@ -27,7 +29,10 @@ func testPassing() bool {
 }
 
 func hasLicense() bool {
-	return util.FilesExistAny(sourcePath, "license", "licensing", "copying")
+	if _, err := license.NewFromDir(sourcePath); err != nil {
+		return false
+	}
+	return true
 }
 
 func hasReadme() bool {
