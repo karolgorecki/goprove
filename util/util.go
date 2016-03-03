@@ -51,9 +51,10 @@ func FilesExistAny(path string, files ...string) bool {
 	return false
 }
 
-// FindPatternInTree tries to match the regular expression in files matching the file pattern.
-func FindPatternInTree(path, regex, filePattern string) bool {
-	ok := false
+// FindOccurrencesInTree tries to match the regular expression in files matching the file pattern.
+// It returns the number of matchings.
+func FindOccurrencesInTree(path, regex, filePattern string) int {
+	matches := 0
 
 	err := filepath.Walk(path, func(p string, f os.FileInfo, err error) error {
 		if err != nil {
@@ -76,9 +77,15 @@ func FindPatternInTree(path, regex, filePattern string) bool {
 
 		r, _ := regexp.Compile(regex)
 		match := r.FindStringSubmatch(string(file))
-		ok = len(match) > 0
+
+		if len(match) > 0 {
+			matches++
+		}
 		return nil
 	})
 
-	return ok && err == nil
+	if err != nil {
+		return 0
+	}
+	return matches
 }

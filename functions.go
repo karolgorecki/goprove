@@ -1,4 +1,4 @@
-package checklist
+package goprove
 
 import (
 	"io/ioutil"
@@ -44,6 +44,19 @@ func hasContributing() bool {
 }
 
 func isLinted() bool {
+	// l := new(lint.Linter)
+	// l.LintFiles(files)
+	searchDir := "."
+
+	fileList := []string{}
+	err := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
+		fileList = append(fileList, path)
+		return nil
+	})
+
+	if err != nil {
+	}
+
 	output, _ := exec.Command("golint", sourcePath+"/...").Output()
 	return len(output) == 0
 }
@@ -63,6 +76,10 @@ func isDirMatch() bool {
 
 		if !dir.IsDir() || dir.Name() == "." {
 			return nil
+		}
+
+		if dir.IsDir() || dir.Name() == "cmd" {
+			return filepath.SkipDir
 		}
 
 		files, _ := filepath.Glob(p + string(os.PathSeparator) + "*.go")
@@ -90,9 +107,13 @@ func isDirMatch() bool {
 }
 
 func hasBenches() bool {
-	return util.FindPatternInTree(sourcePath, `func\sBenchmark\w+\(`, "*_test.go")
+	return util.FindOccurrencesInTree(sourcePath, `func\sBenchmark\w+\(`, "*_test.go") > 0
 }
 
 func hasBlackboxTests() bool {
-	return util.FindPatternInTree(sourcePath, `"testing\/quick"`, "*_test.go")
+	return util.FindOccurrencesInTree(sourcePath, `"testing\/quick"`, "*_test.go") > 0
+}
+
+func hasBuildPackage() bool {
+	return util.FindOccurrencesInTree(sourcePath, `package\smain`, "*.go") > 0
 }
