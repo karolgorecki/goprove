@@ -1,72 +1,148 @@
-// Inspect your project for the best practices listed in the Go CheckList.
-package main
+// Package goprove contains lib for checking the Golang best practises
+package goprove
 
 import (
-	"encoding/json"
-	"flag"
-	"fmt"
-	"log"
-	"os"
+	"sync"
 
-	"github.com/karolgorecki/goprove/checklist"
-	"github.com/karolgorecki/goprove/util"
+	"github.com/fatih/structs"
+)
+
+const (
+	minimumCriteria itemCategory = iota
+	goodCitizen
+	extraCredit
 )
 
 var (
-	flagOutput = flag.String("output", "text", "output formatting")
+	sourcePath string
+	checkList  []checkItem
 )
 
-const usageDoc = `goprove: inspect your project for the best practices listed in the Go CheckList
+//go:generate jsonenums -type=itemCategory
+type itemCategory byte
 
-Usage:
-
-  goprove <directory>
-`
-
-func main() {
-	// Use sbrk for allocations rather than GC.
-	// Improves performance by 20%.
-	_ = os.Setenv("GODEBUG", "sbrk=1")
-
-	flag.Parse()
-	log.SetPrefix("goprove: ")
-
-	args := flag.Args()
-	if len(args) != 1 {
-		usage()
-	}
-	sourcePath := args[0]
-
-	// Create 2 slices with passed/failed checklist items
-	okTasks, nokTasks := checklist.RunTasks(sourcePath)
-
-	printOutput(okTasks, nokTasks)
+type checkItem struct {
+	Name, Desc string
+	Category   itemCategory
+	fn         func() bool
 }
 
-func printOutput(passed []map[string]interface{}, failed []map[string]interface{}) {
-	switch *flagOutput {
-	case "json":
-		enc := json.NewEncoder(os.Stdout)
-		enc.Encode(struct {
-			Passed, Failed []map[string]interface{}
-		}{
-			passed, failed,
-		})
-	case "text":
-		fmt.Println("Passed tests:", len(passed), "of", len(passed)+len(failed))
-		fmt.Println("---------------------------------------------------------------")
-		for _, task := range passed {
-			fmt.Println(util.FormatSuccess(task["Desc"].(string)))
-		}
+func (ci checkItem) run() (success bool) {
+	return ci.fn()
+}
 
-		fmt.Println("---------------------------------------------------------------")
-		for _, task := range failed {
-			fmt.Println(util.FormatFail(task["Desc"].(string)))
-		}
+func init() {
+	checkList = []checkItem{
+		{
+			Name:     "projectBuilds",
+			Category: minimumCriteria,
+			Desc:     "Compiles: Does the project build?",
+			fn:       projectBuilds,
+		},
+		{
+			Name:     "isFormatted",
+			Category: minimumCriteria,
+			Desc:     "gofmt Correctness: Is the code formatted correctly?",
+			fn:       isFormatted,
+		},
+		{
+			Name:     "hasLicense",
+			Category: minimumCriteria,
+			Desc:     "Licensed: Does the project have a license?",
+			fn:       hasLicense,
+		},
+		{
+			Name:     "isLinted",
+			Category: minimumCriteria,
+			Desc:     "golint Correctness: Is the linter satisfied?",
+			fn:       isLinted,
+		},
+		{
+			Name:     "isVetted",
+			Category: minimumCriteria,
+			Desc:     "go tool vet Correctness: Is the Go vet satisfied?",
+			fn:       isVetted,
+		},
+		{
+			Name:     "hasReadme",
+			Category: minimumCriteria,
+			Desc:     "README Presence: Does the project's include a documentation entrypoint?",
+			fn:       hasReadme,
+		},
+		{
+			Name:     "testPassing",
+			Category: minimumCriteria,
+			Desc:     "Are the tests passing?",
+			fn:       testPassing,
+		},
+		{
+			Name:     "isDirMatch",
+			Category: minimumCriteria,
+			Desc:     "Directory Names and Packages Match: Does each package <pkg> statement's package name match the containing directory name?",
+			fn:       isDirMatch,
+		},
+		{
+			Name:     "hasContributing",
+			Category: goodCitizen,
+			Desc:     "Contribution Process: Does the project document a contribution process?",
+			fn:       hasContributing,
+		},
+		{
+			Name:     "hasBenches",
+			Category: extraCredit,
+			Desc:     "Benchmarks: In addition to tests, does the project have benchmarks?",
+			fn:       hasBenches,
+		},
+		{
+			Name:     "hasBlackboxTests",
+			Category: extraCredit,
+			Desc:     "Blackbox Tests: In addition to standard tests, does the project have blackbox tests?",
+			fn:       hasBlackboxTests,
+		},
 	}
 }
 
-func usage() {
-	fmt.Fprintf(os.Stderr, usageDoc)
-	os.Exit(1)
+// RunTasks is a wrapper for running all tasks from the list
+func RunTasks(path string, tasksToExlude []string) (successTasks []map[string]interface{}, failedTasks []map[string]interface{}) {
+	var wg sync.WaitGroup
+	sourcePath = path
+
+	excludeTasks(&checkList, tasksToExlude)
+
+	wg.Add(len(checkList))
+	for _, task := range checkList {
+		go func(task checkItem) {
+			if ok := task.run(); ok {
+				successTasks = append(successTasks, structs.Map(task))
+			} else {
+				failedTasks = append(failedTasks, structs.Map(task))
+			}
+			wg.Done()
+		}(task)
+	}
+
+	wg.Wait()
+	return successTasks, failedTasks
+}
+
+func excludeTasks(chL *[]checkItem, tskE []string) {
+	tempChL := *chL
+	if !hasBuildPackage() {
+		for idx, item := range tempChL {
+			if item.Name == "projectBuilds" {
+				tempChL = append(tempChL[:idx], tempChL[idx+1:]...)
+			}
+		}
+	}
+
+	if len(tskE) > 0 {
+		for _, tskExc := range tskE {
+			for idx, item := range tempChL {
+				if item.Name == tskExc {
+					tempChL = append(tempChL[:idx], tempChL[idx+1:]...)
+				}
+			}
+		}
+	}
+	*chL = tempChL
 }
