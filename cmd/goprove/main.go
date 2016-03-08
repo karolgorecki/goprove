@@ -21,11 +21,14 @@ const usageDoc = `goprove: inspect your project for the best practices listed in
 
 Usage:
 
-  SIMPLE: goprove <directory>
+  SIMPLE:
+  	goprove <directory>
 
-  WITH OUTPUT: goprove -output=<output: json or text> <directory>
+  WITH OUTPUT:
+  	goprove -output=<output: json or text> <directory>
 
-  WITH EXCLUDE: goprove -exclude=<tasks: separated by comma> <directory>
+  WITH EXCLUDE:
+  	goprove -exclude=<tasks: separated by comma> <directory>
 
 Available tasks for exclude:
   projectBuilds, isFormatted, hasLicense, isLinted, isVetted, hasReadme,
@@ -55,9 +58,6 @@ func main() {
 	if len(*flagExclude) > 0 {
 		excludeTasks = strings.Split(*flagExclude, ",")
 	}
-
-	// var excludeTasks []string
-	// excludeTasks := []string{"hasLicense", "isVetted", "hasLicense", "hasBlackboxTests"}
 
 	sourcePath := args[0]
 	okTasks, nokTasks := goprove.RunTasks(sourcePath, excludeTasks)

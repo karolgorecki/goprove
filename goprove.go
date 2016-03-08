@@ -1,3 +1,4 @@
+// Package goprove contains lib for checking the Golang best practises
 package goprove
 
 import (

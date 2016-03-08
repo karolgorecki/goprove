@@ -1,6 +1,8 @@
+// Package goprove contains lib for checking the Golang best practi
 package goprove
 
 import (
+	"go/format"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -8,6 +10,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/golang/lint"
 	"github.com/ryanuber/go-license"
 
 	"github.com/karolgorecki/goprove/util"
@@ -19,8 +22,25 @@ func projectBuilds() bool {
 }
 
 func isFormatted() bool {
-	output, _ := exec.Command("gofmt", "-l -s", sourcePath).Output()
-	return len(output) == 0
+	errors := 0
+	filepath.Walk(sourcePath, func(path string, f os.FileInfo, err error) error {
+		if !strings.HasSuffix(filepath.Ext(path), ".go") {
+			return nil
+		}
+
+		file, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+
+		fmtFile, _ := format.Source(file)
+
+		if string(file) != string(fmtFile) {
+			errors++
+		}
+		return nil
+	})
+	return errors == 0
 }
 
 func testPassing() bool {
@@ -44,21 +64,30 @@ func hasContributing() bool {
 }
 
 func isLinted() bool {
-	// l := new(lint.Linter)
-	// l.LintFiles(files)
-	searchDir := "."
+	errors := 0
+	l := new(lint.Linter)
 
-	fileList := []string{}
-	err := filepath.Walk(searchDir, func(path string, f os.FileInfo, err error) error {
-		fileList = append(fileList, path)
+	filepath.Walk(sourcePath+"/...", func(path string, f os.FileInfo, err error) error {
+
+		if !strings.HasSuffix(filepath.Ext(path), ".go") {
+			return nil
+		}
+
+		file, err := ioutil.ReadFile(path)
+		if err != nil {
+			return nil
+		}
+
+		if lnt, _ := l.Lint(f.Name(), file); len(lnt) > 0 {
+			if lnt[0].Confidence > 0.2 {
+				errors++
+				return nil
+			}
+		}
 		return nil
 	})
 
-	if err != nil {
-	}
-
-	output, _ := exec.Command("golint", sourcePath+"/...").Output()
-	return len(output) == 0
+	return errors == 0
 }
 
 func isVetted() bool {
@@ -78,7 +107,7 @@ func isDirMatch() bool {
 			return nil
 		}
 
-		if dir.IsDir() || dir.Name() == "cmd" {
+		if dir.IsDir() && dir.Name() == "cmd" {
 			return filepath.SkipDir
 		}
 
