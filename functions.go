@@ -12,6 +12,7 @@ import (
 
 	"github.com/golang/lint"
 	"github.com/ryanuber/go-license"
+
 	"github.com/karolgorecki/goprove/util"
 )
 
