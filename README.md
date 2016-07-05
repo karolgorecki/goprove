@@ -22,6 +22,8 @@ Available tasks for exclude:
   projectBuilds, isFormatted, hasLicense, isLinted, isVetted, hasReadme,
   testPassing, isDirMatch, hasContributing, hasBenches, hasBlackboxTests
 ```
-
+### Contributing
+Contributions are most welcome.
+Instructions are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
 ### License
 MIT
