@@ -69,7 +69,8 @@ func printOutput(passed []map[string]interface{}, failed []map[string]interface{
 	case "json":
 		enc := json.NewEncoder(os.Stdout)
 		enc.Encode(struct {
-			Passed, Failed []map[string]interface{}
+			Passed []map[string]interface{} `json:"passed"`
+			Failed []map[string]interface{} `json:"failed"`
 		}{
 			passed, failed,
 		})
