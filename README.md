@@ -25,5 +25,6 @@ Available tasks for exclude:
 ### Contributing
 Contributions are most welcome.
 Instructions are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ### License
 MIT
