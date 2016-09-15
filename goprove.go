@@ -22,9 +22,10 @@ var (
 type itemCategory byte
 
 type checkItem struct {
-	Name, Desc string
-	Category   itemCategory
-	fn         func() bool
+	Name     string       `json:"name"`
+	Desc     string       `json:"desc"`
+	Category itemCategory `json:"category"`
+	fn       func() bool
 }
 
 func (ci checkItem) run() (success bool) {
