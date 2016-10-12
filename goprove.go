@@ -2,6 +2,7 @@
 package goprove
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/fatih/structs"
@@ -14,8 +15,9 @@ const (
 )
 
 var (
-	sourcePath string
-	checkList  []checkItem
+	sourcePath   string
+	sourceGoPath string
+	checkList    []checkItem
 )
 
 //go:generate jsonenums -type=itemCategory
@@ -107,6 +109,7 @@ func init() {
 func RunTasks(path string, tasksToExlude []string) (successTasks []map[string]interface{}, failedTasks []map[string]interface{}) {
 	var wg sync.WaitGroup
 	sourcePath = path
+	sourceGoPath = strings.Replace(sourcePath, os.Getenv("GOPATH")+"/src/", "", 1)
 
 	excludeTasks(&checkList, tasksToExlude)
 
