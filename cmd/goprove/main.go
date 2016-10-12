@@ -78,12 +78,12 @@ func printOutput(passed []map[string]interface{}, failed []map[string]interface{
 		fmt.Println("Passed tests:", len(passed), "of", len(passed)+len(failed))
 		fmt.Println("---------------------------------------------------------------")
 		for _, task := range passed {
-			fmt.Println(util.FormatSuccess(task["Desc"].(string)))
+			fmt.Println(util.FormatSuccess(task["desc"].(string)))
 		}
 
 		fmt.Println("---------------------------------------------------------------")
 		for _, task := range failed {
-			fmt.Println(util.FormatFail(task["Desc"].(string)))
+			fmt.Println(util.FormatFail(task["desc"].(string)))
 		}
 	}
 }
