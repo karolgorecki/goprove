@@ -91,7 +91,7 @@ func isLinted() bool {
 }
 
 func isVetted() bool {
-	_, err := exec.Command("go", "vet", sourcePath).Output()
+	_, err := exec.Command("go", "vet", sourceGoPath).Output()
 	return err == nil
 }
 
