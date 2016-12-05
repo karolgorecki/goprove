@@ -107,7 +107,8 @@ func isDirMatch() bool {
 			return nil
 		}
 
-		if dir.IsDir() && dir.Name() == "cmd" {
+		// If the dir is "cmd" or it starts with "_" we should skip it
+		if dir.IsDir() && (dir.Name() == "cmd" || string([]rune(dir.Name())[0]) == "_") {
 			return filepath.SkipDir
 		}
 
@@ -124,14 +125,7 @@ func isDirMatch() bool {
 		r, _ := regexp.Compile(`package ([\w]+)`)
 		match := r.FindStringSubmatch(string(file))
 		if len(match) > 1 {
-			pkgName := match[1]
-
-			// Ignore the main package since it's usually located under cmd/command-name/
-			if pkgName == "main" {
-				return nil
-			}
-
-			if dir.Name() != pkgName {
+			if dir.Name() != match[1] {
 				ok = false
 			}
 		}
