@@ -124,7 +124,14 @@ func isDirMatch() bool {
 		r, _ := regexp.Compile(`package ([\w]+)`)
 		match := r.FindStringSubmatch(string(file))
 		if len(match) > 1 {
-			if dir.Name() != match[1] {
+			pkgName := match[1]
+
+			// Ignore the main package since it's usually located under cmd/command-name/
+			if pkgName == "main" {
+				return nil
+			}
+
+			if dir.Name() != pkgName {
 				ok = false
 			}
 		}
