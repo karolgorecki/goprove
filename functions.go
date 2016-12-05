@@ -108,7 +108,7 @@ func isDirMatch() bool {
 		}
 
 		// If the dir is "cmd" or it starts with "_" we should skip it
-		if dir.IsDir() && (dir.Name() == "cmd" || string([]rune(dir.Name())[0]) == "_") {
+		if dir.IsDir() && (dir.Name() == "cmd" || dir.Name()[0] == '_') {
 			return filepath.SkipDir
 		}
 
